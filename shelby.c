@@ -201,6 +201,10 @@ int   main(int argc, char **argv)
         exit(0);
       case 'x':
         is_32 = 1;
+        break ;
+      default:
+        print_help();
+        exit(1);
     }
   }
   check_file(argv[optind]);
@@ -208,4 +212,5 @@ int   main(int argc, char **argv)
     execute_for_32(argv[optind]);
   else
     execute_for_64(argv[optind]);
+  return 0;
 }
