@@ -1,5 +1,5 @@
 # 🐚 shelby: ELF to Shellcode Converter
-A small, efficient utility to extract bytecode from ELF executables and transform it into ready-to-use shellcode.
+A small, efficient utility to extract bytecode from ELF executables and transform it into ready-to-use shellcode for x64 binaries.
 
 
 
@@ -10,6 +10,8 @@ A small, efficient utility to extract bytecode from ELF executables and transfor
 *   🛠️ **Shellcode Generation:** Converts the extracted bytecode into a format suitable for shellcode injection.
 *   🚀 **Lightweight & Fast:** Developed in C for minimal overhead and maximum performance.
 *   🧩 **Simple Integration:** Generates shellcode that can be easily integrated into exploits or custom loaders.
+
+  (x32 bit support in progress)
 
 ---
 
