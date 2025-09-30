@@ -46,11 +46,7 @@ You will need a C compiler (like GCC) and `make` installed on your system.
 ---
 
 
-## 💡 Usage Examples
-
-The `shelby` program takes an ELF file as input and outputs the extracted shellcode.
-
-### Basic Usage
+## Basic Usage
 
 To extract shellcode from an ELF file named `hellcode` and print it to standard output:
 
