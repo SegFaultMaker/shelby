@@ -14,7 +14,7 @@ A small, efficient utility to extract bytecode from ELF executables and transfor
 
 ### Prerequisites
 
-You will need a C compiler (like GCC) and `make` installed on your system.
+You will need a C compiler (like GCC) installed on your system.
 
 *   **Linux (using GCC):**
     ```bash
