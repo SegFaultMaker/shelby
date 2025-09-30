@@ -19,8 +19,6 @@ You will need a C compiler (like GCC) and `make` installed on your system.
 *   **Linux/macOS (using GCC):**
     ```bash
     sudo apt update && sudo apt install build-essential # For Debian/Ubuntu
-    # Or for macOS with Homebrew:
-    # brew install gcc
     ```
 
 ### Manual Compilation
