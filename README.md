@@ -16,7 +16,7 @@ A small, efficient utility to extract bytecode from ELF executables and transfor
 
 You will need a C compiler (like GCC) and `make` installed on your system.
 
-*   **Linux/macOS (using GCC):**
+*   **Linux (using GCC):**
     ```bash
     sudo apt update && sudo apt install build-essential # For Debian/Ubuntu
     ```
