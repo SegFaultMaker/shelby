@@ -96,15 +96,18 @@ int   main(int argc, char **argv)
     printf(RED "ERROR: " DEFAULT "Cannot open %s\n", argv[1]);
     return 1;
   }
+
   read(elf, &elf_header, sizeof(Elf64_Ehdr));
   check_if_elf(elf_header);
   bytes = find_text_offset(elf, elf_header);
+
   text = malloc(bytes);
   if (!text)
   {
     printf(RED "ERROR: " DEFAULT "Memory allocation error\n");
     return 1;
   }
+  
   read(elf, text, bytes);
   print_shellcode(text, bytes);
   free(text);
