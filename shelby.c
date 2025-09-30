@@ -6,6 +6,7 @@
 #include <elf.h>
 
 #define RED "\033[31m"
+#define GREEN "\033[32m"
 #define YELLOW "\033[33m"
 #define DEFAULT "\033[0m"
 
@@ -103,9 +104,10 @@ void  print_shellcode(unsigned char *text, uint64_t bytes)
       printf("\\x%02x", text[i]);
     counter++;
   }
-  printf("\"\nShellcode length: %d\n", counter);
+  printf("\"\n\n");
   if (null_byte)
     printf(YELLOW "WARNING: " DEFAULT "Null byte in shellcode\n");
+  printf("Shellcode length: " GREEN "%d" DEFAULT "\n", counter);
 }
 
 void  print_help(void)
