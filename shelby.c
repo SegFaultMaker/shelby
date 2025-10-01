@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/stat.h>
+#include <string.h>
 #include <elf.h>
+#include <sys/stat.h>
 
 #define RED "\033[31m"
 #define GREEN "\033[32m"
@@ -12,6 +13,7 @@
 
 int is_32 = 0;
 
+/* =========================== Checks =====================================*/
 void  check_file(char *file)
 {
   struct stat file_stat;
@@ -46,18 +48,6 @@ void  check_if_elf_64(Elf64_Ehdr header)
   }
 }
 
-uint64_t find_text_offset_64(int elf, Elf64_Ehdr elf_header)
-{
-  Elf64_Phdr  program_header;
-
-  lseek(elf, elf_header.e_phoff, SEEK_SET);
-  read(elf, &program_header, sizeof(Elf64_Phdr));
-  while (program_header.p_type != PT_LOAD || !(program_header.p_flags & PF_X)) 
-    read(elf, &program_header, sizeof(Elf64_Phdr));
-  lseek(elf, program_header.p_offset, SEEK_SET);
-  return (program_header.p_filesz);
-}
-
 void  check_if_elf_32(Elf32_Ehdr header)
 {
   if (header.e_ident[EI_MAG0] != ELFMAG0 ||
@@ -75,17 +65,111 @@ void  check_if_elf_32(Elf32_Ehdr header)
   }
 }
 
-uint64_t find_text_offset_32(int elf, Elf32_Ehdr elf_header)
+int check_sh_name_64(int elf, Elf64_Ehdr elf_header, Elf64_Shdr section_header)
 {
-  Elf32_Phdr  program_header;
+  Elf64_Shdr  shstrtab_header;
+  unsigned char name[256];
+  off_t current_pos = lseek(elf, 0, SEEK_CUR);
+  off_t shstrtab_offset = elf_header.e_shoff + (elf_header.e_shstrndx * sizeof(Elf64_Shdr));
+  
+  lseek(elf, shstrtab_offset, SEEK_SET);
+  read(elf, &shstrtab_header, sizeof(Elf64_Shdr));
+  
+  lseek(elf, shstrtab_header.sh_offset + section_header.sh_name, SEEK_SET);
+  read(elf, name, sizeof(name)); 
+  name[sizeof(name) - 1] = '\0';
+  
+  lseek(elf, current_pos, SEEK_SET);
+  if (strcmp(name, ".text") == 0)
+    return 0;
+  return 1;
+}
+
+int check_sh_name_32(int elf, Elf32_Ehdr elf_header, Elf32_Shdr section_header)
+{
+  Elf64_Shdr  shstrtab_header;
+  unsigned char name[256];
+  off_t current_pos = lseek(elf, 0, SEEK_CUR);
+  off_t shstrtab_offset = elf_header.e_shoff + (elf_header.e_shstrndx * sizeof(Elf32_Shdr));
+  
+  lseek(elf, shstrtab_offset, SEEK_SET);
+  read(elf, &shstrtab_header, sizeof(Elf32_Shdr));
+  
+  lseek(elf, shstrtab_header.sh_offset + section_header.sh_name, SEEK_SET);
+  read(elf, name, sizeof(name)); 
+  name[sizeof(name) - 1] = '\0';
+  
+  lseek(elf, current_pos, SEEK_SET);
+  if (strcmp(name, ".text") == 0)
+    return 0;
+  return 1;
+}
+
+/* ======================================================================== */
+
+
+/* ======================== Offset Finders ================================ */
+uint64_t find_text_offset_64(int elf, Elf64_Ehdr elf_header)
+{
+  Elf64_Phdr  program_header;
+  Elf64_Shdr  section_header;
+  int         i = 0;
 
   lseek(elf, elf_header.e_phoff, SEEK_SET);
-  read(elf, &program_header, sizeof(Elf32_Phdr));
-  while (program_header.p_type != PT_LOAD || !(program_header.p_flags & PF_X)) 
-    read(elf, &program_header, sizeof(Elf32_Phdr));
+  read(elf, &program_header, sizeof(Elf64_Phdr));
+  while ((program_header.p_type != PT_LOAD || !(program_header.p_flags & PF_X))  && i != elf_header.e_phnum)
+  {
+    read(elf, &program_header, sizeof(Elf64_Phdr));
+    i++;
+  }
+  if (program_header.p_offset == 0)
+  {
+    lseek(elf, elf_header.e_shoff, SEEK_SET);
+    i = 0;
+    read(elf, &section_header, sizeof(Elf64_Shdr));
+    while (check_sh_name_64(elf, elf_header, section_header) && i < elf_header.e_shnum)
+    {
+      read(elf, &section_header, sizeof(Elf64_Shdr));
+      i++;
+    }
+    lseek(elf, section_header.sh_offset, SEEK_SET);
+    return (section_header.sh_size);
+  }
   lseek(elf, program_header.p_offset, SEEK_SET);
   return (program_header.p_filesz);
 }
+
+
+uint64_t find_text_offset_32(int elf, Elf32_Ehdr elf_header)
+{
+  Elf32_Phdr  program_header;
+  Elf32_Shdr  section_header;
+  int         i = 0;
+
+  lseek(elf, elf_header.e_phoff, SEEK_SET);
+  read(elf, &program_header, sizeof(Elf32_Phdr));
+  while ((program_header.p_type != PT_LOAD || !(program_header.p_flags & PF_X))  && i != elf_header.e_phnum)
+  {
+    read(elf, &program_header, sizeof(Elf32_Phdr));
+    i++;
+  }
+  if (program_header.p_offset == 0)
+  {
+    lseek(elf, elf_header.e_shoff, SEEK_SET);
+    i = 0;
+    read(elf, &section_header, sizeof(Elf32_Shdr));
+    while (check_sh_name_32(elf, elf_header, section_header) && i < elf_header.e_shnum)
+    {
+      read(elf, &section_header, sizeof(Elf32_Shdr));
+      i++;
+    }
+    lseek(elf, section_header.sh_offset, SEEK_SET);
+    return (section_header.sh_size);
+  }
+  lseek(elf, program_header.p_offset, SEEK_SET);
+  return (program_header.p_filesz);
+}
+/* ======================================================================== */
 
 void  print_shellcode(unsigned char *text, uint64_t bytes)
 {
@@ -148,7 +232,6 @@ void  execute_for_64(char *file)
   print_shellcode(text, bytes);
   free(text);
   close(elf);
-  exit(1);
 }
 
 void  execute_for_32(char *file)
@@ -182,7 +265,6 @@ void  execute_for_32(char *file)
   print_shellcode(text, bytes);
   free(text);
   close(elf);
-  exit(1);
 }
 
 int   main(int argc, char **argv)
@@ -208,6 +290,11 @@ int   main(int argc, char **argv)
         print_help();
         exit(1);
     }
+  }
+  if (optind >= argc)
+  {
+    print_help();
+    exit(1);
   }
   check_file(argv[optind]);
   if (is_32)
